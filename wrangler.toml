@@ -1,0 +1,12 @@
+name = "llm-stream-optimizer"
+main = "worker.js"
+compatibility_date = "2025-12-26"
+workers_dev = true
+
+# Create a Workers KV namespace, then uncomment and fill this binding.
+# The Worker expects the binding name to be exactly CONFIG_KV.
+#
+# [[kv_namespaces]]
+# binding = "CONFIG_KV"
+# id = "your-production-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"

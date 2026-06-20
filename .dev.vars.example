@@ -1,0 +1,22 @@
+# Copy this file to .dev.vars for local development.
+# Do not commit .dev.vars because it contains secrets.
+
+# Required: proxy API key and /admin login password.
+PROXY_API_KEY="replace-with-a-strong-secret"
+
+# Optional default OpenAI-compatible upstream.
+# OPENAI_API_KEY="sk-..."
+# UPSTREAM_URL="https://api.openai.com/v1"
+
+# Optional multiple OpenAI-compatible endpoints.
+# OPENAI_ENDPOINTS='[{"id":"default","name":"OpenAI","url":"https://api.openai.com/v1","apiKey":"sk-...","models":[],"useNativeFetch":false}]'
+
+# Optional Gemini upstream.
+# GEMINI_API_KEY="..."
+# GEMINI_URL="https://generativelanguage.googleapis.com"
+# GEMINI_USE_NATIVE_FETCH="true"
+
+# Optional Anthropic upstream.
+# ANTHROPIC_API_KEY="sk-ant-..."
+# ANTHROPIC_URL="https://api.anthropic.com"
+# ANTHROPIC_USE_NATIVE_FETCH="true"

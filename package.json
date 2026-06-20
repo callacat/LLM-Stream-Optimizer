@@ -1,0 +1,25 @@
+{
+  "name": "llm-stream-optimizer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A lightweight Cloudflare Workers proxy that optimizes LLM streaming output.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "check": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "llm",
+    "openai",
+    "anthropic",
+    "gemini",
+    "streaming"
+  ],
+  "author": "George Tse",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

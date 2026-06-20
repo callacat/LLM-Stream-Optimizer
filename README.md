@@ -1,63 +1,142 @@
-# ⚡LLM Stream Optimizer
+# LLM Stream Optimizer
 
+[中文文档请见 README-CN.md](README-CN.md)
 
-**⚠️注意⚠️：<br>本项目已暂时停止维护！！！**
-<br>
+LLM Stream Optimizer is a lightweight Cloudflare Workers proxy for OpenAI-compatible clients. It can route requests to OpenAI-compatible, Anthropic, and Google Gemini upstream APIs, normalize selected responses into OpenAI-style output, and smooth streaming responses so large chunks are emitted more naturally.
 
-Based on ☁️Cloudflare Workers!!!
+> [!WARNING]
+> This project is currently in paused / limited maintenance mode. The repository is kept available for existing users and self-hosting, but new features and security fixes are not guaranteed.
 
-<br>
-🍗食用方法：
+## Features
 
+- OpenAI-compatible proxy endpoint for chat completions and model listing.
+- Multiple OpenAI-compatible upstream endpoints with optional model routing.
+- Anthropic and Gemini upstream support with OpenAI-style response conversion.
+- Streaming response optimization with configurable delays and model exclusions.
+- Web administration dashboard at `/admin`.
+- Optional Cloudflare KV storage for runtime configuration.
+- ShadowFetch / native fetch switching for upstream requests that need fewer Cloudflare-added headers.
 
-- 新建一个Cloudflare Workers
-- 复制[worker.js](https://github.com/GeorgeXie2333/LLM-Stream-Optimizer/blob/main/worker.js)中的全部文本，粘贴到Workers编辑器中并部署
-- Workers设置/变量和机密，添加一个类型为“密钥”，名为`PROXY_API_KEY`的变量，内容为代理后的APIKEY，同时也是Web管理页的登录密码
-- Cloudflare左侧边栏/存储和数据库/KV，创建一个新的KV，名称随意。
-- Workers设置/绑定/添加/KV 命名空间，变量名称设为`CONFIG_KV`，KV 命名空间选择刚刚创建的KV。
-- 部署完成，打开你的Workers域名即可访问管理面板！
+## Requirements
 
+- A Cloudflare account with Workers enabled.
+- A Cloudflare Workers KV namespace if you want persistent dashboard configuration.
+- Node.js 18 or newer for local Wrangler workflows.
+- One or more upstream LLM API keys.
 
+## Quick Start With Wrangler
 
+Install dependencies:
 
-变量：
+```bash
+npm install
+```
 
-`PROXY_API_KEY`=代理APIKEY，同时也是Web管理页的登录密码<br>
-`CONFIG_KV`=KV数据库，用于存储API数据及流式优化配置
+Copy the local development environment example:
 
+```bash
+cp .dev.vars.example .dev.vars
+```
 
+Edit `.dev.vars` and set at least:
 
-**功能：**
+```ini
+PROXY_API_KEY="replace-with-your-password-and-proxy-key"
+```
 
-**API多合一**
-- 支持添加OpenAI、Anthropic、Google Gemini格式的API
-- 支持添加多个OpenAI API
-- 统一转为OpenAI格式API
+Start local development:
 
-**智能流式输出优化**
-- 将大型响应块分解为逐字符输出
-- 基于响应块大小和时间间隔智能调整字符间延迟
+```bash
+npm run dev
+```
 
-**自适应延迟算法**
-- 检测响应数据块大小：块越大，字符延迟越小
-- 监控响应时间间隔：间隔越长，字符延迟越大
-- 确保输出平滑自然，没有明显停顿
+Open the local Worker URL, then go to `/admin` to configure upstream APIs.
 
-**Web API管理页面**
-- 支持通过Web管理页面调整API设置
-- 访问workers域名根目录即为Web管理页面
-- Web管理页面登录密码为变量`PROXY_API_KEY`
+Before deploying, create a KV namespace and fill the `CONFIG_KV` binding in `wrangler.toml`:
 
-**剔除 Cloudflare 自带 fetch 的多余请求头**
-- 使用ShadowFetch替代Cloudflare Fetch
-- 确保请求上游API时不会带有Cloudflare添加的其他请求头
-- 支持对单个API设置启用或关闭原生Fetch以适配更多使用情景
+```toml
+[[kv_namespaces]]
+binding = "CONFIG_KV"
+id = "your-production-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+```
 
+Then deploy:
 
-**支持`/v1/models`路径获取所有API的模型列表**
+```bash
+npm run deploy
+```
 
----
+## Manual Cloudflare Dashboard Deployment
 
-## CDN acceleration and security protection for this project are sponsored by Tencent EdgeOne
+If you prefer the original copy-and-paste deployment flow:
+
+1. Create a new Cloudflare Worker.
+2. Copy all content from [`worker.js`](worker.js) into the Workers editor and deploy it.
+3. In Workers settings, add a secret named `PROXY_API_KEY`. This value is both the proxy API key and the `/admin` login password.
+4. Create a Workers KV namespace.
+5. Add a KV binding named `CONFIG_KV` and point it to the namespace you created.
+6. Open your Worker domain and visit `/admin`.
+
+## Configuration
+
+### Production Secrets And Bindings
+
+- `PROXY_API_KEY`: Proxy API key and web dashboard login password. Use a strong value for any shared or production deployment.
+- `CONFIG_KV`: KV namespace binding used to store API endpoint and stream optimization configuration. Without this binding, the Worker can still run from environment variables, but dashboard changes cannot be persisted.
+
+### Optional Environment Variables
+
+- `OPENAI_API_KEY`: Default OpenAI-compatible upstream API key.
+- `UPSTREAM_URL`: Default OpenAI-compatible upstream base URL. Defaults to `https://api.openai.com/v1`.
+- `OPENAI_ENDPOINTS`: JSON array for multiple OpenAI-compatible endpoints.
+- `GEMINI_API_KEY`: Google Gemini API key.
+- `GEMINI_URL`: Gemini API base URL. Defaults to `https://generativelanguage.googleapis.com`.
+- `GEMINI_USE_NATIVE_FETCH`: Set to `false` to disable native fetch for Gemini.
+- `ANTHROPIC_API_KEY`: Anthropic API key.
+- `ANTHROPIC_URL`: Anthropic API base URL. Defaults to `https://api.anthropic.com`.
+- `ANTHROPIC_USE_NATIVE_FETCH`: Set to `false` to disable native fetch for Anthropic.
+
+Most runtime settings can also be configured from the `/admin` dashboard when `CONFIG_KV` is bound.
+
+## API Usage
+
+Use the deployed Worker URL as an OpenAI-compatible base URL:
+
+```bash
+curl https://your-worker.example.workers.dev/v1/models \
+  -H "Authorization: Bearer $PROXY_API_KEY"
+```
+
+Model listing requests are intentionally permissive in the current Worker implementation so clients can discover configured models. Chat completion requests require the configured proxy API key when `PROXY_API_KEY` is set.
+
+## Security Notes
+
+- Do not commit `.dev.vars`, real API keys, KV namespace ids that you consider private, or dashboard credentials.
+- Use a strong `PROXY_API_KEY`; it protects both proxy requests and the administration dashboard.
+- Treat the dashboard as an administrative surface. Avoid exposing it through shared credentials.
+- This project is in limited maintenance mode, so review the code and Cloudflare settings before production use.
+
+See [SECURITY.md](SECURITY.md) for more details.
+
+## Development Commands
+
+```bash
+npm run dev
+npm run check
+npm run deploy
+```
+
+`npm run check` performs a Wrangler dry-run deployment validation.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
+
+## Sponsor
+
+CDN acceleration and security protection for this project are sponsored by Tencent EdgeOne.
+
 ![EdgeOne](https://edgeone.ai/media/34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b.png)
+
 [Best Asian CDN, Edge, and Secure Solutions - Tencent EdgeOne](https://edgeone.ai/?from=github)
